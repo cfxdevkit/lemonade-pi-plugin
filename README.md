@@ -14,6 +14,12 @@ After install, type `/login` in Pi then `subscription` and pick **Lemonade**, le
 
 ## Install
 
+### Via Pi (git)
+
+```bash
+pi install git:github.com/lemonade-sdk/lemonade-pi-plugin@main
+```
+
 ### Local (development)
 
 Symlink the repo into Pi's extension directory:
@@ -25,18 +31,6 @@ cd lemonade-pi-plugin
 ```
 
 The installer creates `~/.pi/agent/extensions/lemonade-provider` as a symlink to the repo.
-
-### Via Pi (npm, once published)
-
-```bash
-pi install npm:@lemonade/lemonade-provider
-```
-
-### Via Pi (git)
-
-```bash
-pi install git:github.com/lemonade-sdk/lemonade-pi-plugin@main
-```
 
 ## Usage
 

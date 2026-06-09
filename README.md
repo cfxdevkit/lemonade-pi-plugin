@@ -40,7 +40,7 @@ pi install git:github.com/lemonade-sdk/lemonade-pi-plugin@main
 
 ## Usage
 
-1. Make sure a Lemonade server is running somewhere reachable. On the same machine: `lemond` (defaults to port 8000). On the LAN: any host already running `lemond` will be discovered automatically.
+1. Make sure a Lemonade server is running somewhere reachable. On the same machine: `lemond` (defaults to port 13305). On the LAN: any host already running `lemond` will be discovered automatically.
 2. Start Pi: `pi`
 3. Type `/login` → pick **Lemonade** from the selector.
 4. The extension prompts you in order:

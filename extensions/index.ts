@@ -73,6 +73,7 @@ interface LemonadeModelInfo {
   loaded?: boolean;
   size?: number;
   config?: Record<string, unknown>;
+  labels?: string[];
 }
 
 interface OAuthCredentials {
@@ -279,9 +280,18 @@ function mapToProviderModel(m: LemonadeModelInfo) {
   if (m.category === "image" || (m.backend ?? "").toLowerCase().includes("sd")) {
     input.push("image");
   }
+  // Vision-language models expose "vision" in their labels (via mmproj checkpoint)
+  if (m.labels && m.labels.includes("vision")) {
+    if (!input.includes("image")) {
+      input.push("image");
+    }
+  }
   const cfg = m.config ?? {};
   const contextWindow =
-    (cfg["context_window"] as number) ?? (cfg["context_len"] as number) ?? 128000;
+        (cfg["context_window"] as number) ??
+        (cfg["context_len"] as number) ??
+        ((m as unknown as Record<string, unknown>)["max_context_window"] as number) ??
+        128000;
   const maxTokens =
     (cfg["max_new_tokens"] as number) ?? (cfg["max_tokens"] as number) ?? 4096;
   return {

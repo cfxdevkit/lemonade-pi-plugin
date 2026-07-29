@@ -269,10 +269,44 @@ async function fetchModels(baseUrl: string, apiKey?: string): Promise<LemonadeMo
 
 // ─── Provider model mapping ─────────────────────────────────────────────────
 
-function isReasoningModel(recipe: string | undefined): boolean {
+/**
+ * Detect reasoning-capable Qwen-family models by recipe name.
+ */
+function isReasoningByRecipe(recipe: string | undefined): boolean {
   if (!recipe) return false;
   const r = recipe.toLowerCase();
-  return ["qwq", "deepseek-r1", "r1", "o1", "o3", "think"].some((t) => r.includes(t));
+  return ["qwq", "deepseek-r1", "r1", "o1", "o3", "think", "qwen"].some((t) => r.includes(t));
+}
+
+/**
+ * Heuristic: check model name and labels for reasoning-capable indicators
+ * when the recipe field is absent or doesn't match known patterns.
+ */
+function isReasoningByHeuristic(m: LemonadeModelInfo): boolean {
+  const name = (m.name || m.id || "").toLowerCase();
+  // QwQ and Qwen-Think variants
+  if (["qwq", "qwq-", "qwen-think", "qwen3.5-think"].some((t) => name.includes(t))) return true;
+  // Reasoning models in labels
+  if (m.labels && m.labels.join(" ").toLowerCase().includes("reason")) return true;
+  return false;
+}
+
+/**
+ * Detect Qwen3.x+ models that support the `enable_thinking` protocol
+ * via OpenAI-compatible API. Qwen3.x, QwQ, and Qwen2.5-Thinking models
+ * emit thinking tokens and respond to the `enable_thinking` parameter.
+ */
+function isQwenReasoningModel(m: LemonadeModelInfo): boolean {
+  const name = (m.name || m.id || "").toLowerCase();
+  // Qwen3.x family — these models support enable_thinking via OpenAI-compatible API
+  if (/qwen3[._-]?\d/.test(name) || /qwen-3/.test(name)) return true;
+  // QwQ reasoning models
+  if (/qwq/.test(name)) return true;
+  // Qwen2.5-thinking
+  if (/qwen2\.5.*think/.test(name) || /qwen2\.5-thinking/.test(name)) return true;
+  // Qwen2.5-72B-Instruct (newer versions support thinking)
+  if (/qwen2\.5-72b.*instruct/.test(name)) return true;
+  return false;
 }
 
 function mapToProviderModel(m: LemonadeModelInfo) {
@@ -294,14 +328,19 @@ function mapToProviderModel(m: LemonadeModelInfo) {
         128000;
   const maxTokens =
     (cfg["max_new_tokens"] as number) ?? (cfg["max_tokens"] as number) ?? 4096;
+
+  const reasoning = isReasoningByRecipe(m.recipe) || isReasoningByHeuristic(m);
+  const qwenReasoning = isQwenReasoningModel(m);
+
   return {
     id: m.id,
     name: m.name || m.id,
-    reasoning: isReasoningModel(m.recipe),
+    reasoning: reasoning || qwenReasoning,
     input,
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow,
     maxTokens,
+    compat: qwenReasoning ? { thinkingFormat: "qwen" } : undefined,
   };
 }
 
